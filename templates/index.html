@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraping Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Add Font Awesome for the icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Arcreactor</h1>
+    </div>
+    <div class="container">
+        <h2 class="title">Free Web Scraping Tool - Convert Website to Text</h2>
+        <p class="subtitle">Use Nanotech's web scraper tool to convert any webpage to editable text in 3 simple steps. Extract links, text, and emails with our free web scraping tool.</p>
+        <form id="scrape-form">
+            <input type="text" class="url-input" name="url" placeholder="Enter any URL you want to read" required>
+            <br>
+            <button type="submit" class="button">Scrape</button>
+        </form>
+        <br>
+        <button class="button-secondary" onclick="resetPage()">Home</button>
+    </div>
+
+    <!-- Scraped Results Section -->
+    <div id="scraped-results" class="container" style="display:none;">
+        <h3>Scraped Data:</h3>
+        
+        <!-- Emails Section with Toggle and Download Buttons -->
+        <div class="download-container">
+            <span>Emails</span>
+            <a id="toggle-emails" class="button-icon" onclick="toggleContent('emails-content')">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a id="download-emails" class="button-icon" download="emails.csv">
+                <i class="fas fa-download"></i>
+            </a>
+        </div>
+        <div id="emails-content" class="content-display" style="display: none;"></div> <!-- Hidden initially -->
+
+        <!-- Numbers Section with Toggle and Download Buttons -->
+        <div class="download-container">
+            <span>Numbers</span>
+            <a id="toggle-numbers" class="button-icon" onclick="toggleContent('numbers-content')">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a id="download-numbers" class="button-icon" download="numbers.csv">
+                <i class="fas fa-download"></i>
+            </a>
+        </div>
+        <div id="numbers-content" class="content-display" style="display: none;"></div> <!-- Hidden initially -->
+
+        <!-- Links Section with Toggle and Download Buttons -->
+        <div class="download-container">
+            <span>Links</span>
+            <a id="toggle-links" class="button-icon" onclick="toggleContent('links-content')">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a id="download-links" class="button-icon" download="page_links.csv">
+                <i class="fas fa-download"></i>
+            </a>
+        </div>
+        <div id="links-content" class="content-display" style="display: none;"></div> <!-- Hidden initially -->
+    </div>
+
+    <!-- JavaScript to handle toggling and content fetching -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

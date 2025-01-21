@@ -1,0 +1,168 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f4f8;
+}
+
+.header {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    font-size: 36px;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.container {
+    text-align: center;
+    padding: 80px 20px;
+    max-width: 800px;
+    margin: 60px auto 20px;
+    background-color: white;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+}
+
+.title {
+    font-size: 32px;
+    margin-bottom: 20px;
+    color: #0072ff;
+}
+
+.subtitle {
+    font-size: 18px;
+    margin-bottom: 40px;
+    color: #666;
+}
+
+.url-input {
+    width: 70%;
+    padding: 15px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 30px;
+    margin: 0 auto 20px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+.url-input:focus {
+    border-color: #00c6ff;
+    box-shadow: 0px 4px 10px rgba(0, 198, 255, 0.4);
+}
+
+.button, .button-icon {
+    padding: 15px 40px;
+    font-size: 16px;
+    color: white;
+    background-color: #0072ff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.button-icon {
+    width: 30px; /* Adjust icon button size */
+    height: 30px;
+    padding: 0;
+    font-size: 15px; /* Font size for the icon */
+    background-color: #0072ff;
+    border-radius: 30%; /* Adjust button to be circular */
+    justify-content: center;
+    margin-left: 10px;  /* Adds space between the buttons */
+}
+
+.button-icon i {
+    margin: 0; /* No margin for icon */
+}
+
+.button:hover, .button-icon:hover {
+    background-color: #005bb5;
+    box-shadow: 0px 10px 15px rgba(0, 114, 255, 0.4);
+}
+
+.button:active, .button-icon:active {
+    background-color: #004a99;
+}
+
+.button-secondary {
+    padding: 12px 30px;
+    font-size: 16px;
+    color: #0072ff;
+    background-color: white;
+    border: 2px solid #0072ff;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.button-secondary:hover {
+    background-color: #f0f4f8;
+    box-shadow: 0px 10px 15px rgba(0, 114, 255, 0.2);
+}
+
+.button-secondary:active {
+    background-color: #dce1e8;
+}
+
+/* Flexbox for aligning the text and download button */
+.download-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align text to left, buttons to right */
+    margin: 10px 0;
+}
+
+.download-container span {
+    font-size: 18px;
+    margin-right: auto; /* Push text to the left */
+}
+
+.download-container .button-icon, 
+.download-container .button {
+    margin-left: 10px; /* Space between the eye and download buttons */
+}
+
+/* Content display area */
+.content-display {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto; /* Add scroll if content is too long */
+    font-size: 14px;
+    text-align: left;
+    white-space: pre-wrap; /* Preserve formatting */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+table, th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f0f4f8;
+    color: #333;
+}
