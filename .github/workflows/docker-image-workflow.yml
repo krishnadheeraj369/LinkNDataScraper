@@ -21,8 +21,8 @@ jobs:
       uses: docker/login-action@v3
       with:
        registry: docker.io
-       username: "krishnadheeraj369@yahoo.com"
-       password: "8R?#DZJcM5bc4b6"
+       username: "**************"
+       password: "*************"
 
     - name: Build and Push docker image
       uses: docker/build-push-action@v6
