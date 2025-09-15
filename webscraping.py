@@ -1,10 +1,10 @@
-from flask import Flask, request, jsonify, url_for, render_template
+from flask import Flask, request, jsonify, render_template, url_for
 from urllib.parse import urlparse
 import asyncio
 import re
 import csv
-from playwright.async_api import async_playwright
 import os
+from playwright.async_api import async_playwright
 
 app = Flask(__name__)
 
@@ -19,18 +19,26 @@ def scrape():
         return jsonify({'error': 'URL is required'}), 400
 
     try:
-        asyncio.run(scrape_url(url))
+        result = asyncio.run(scrape_url(url))
 
-        # Generate download links, assuming files are saved in 'static' directory
-        download_links = {
-            'emails': url_for('static', filename='emails.csv'),
-            'numbers': url_for('static', filename='numbers.csv'),
-            'links': url_for('static', filename='page_links.csv')
+        # Save CSV files for download
+        os.makedirs("static", exist_ok=True)
+        save_list_to_csv("static/emails.csv", [["Email"], *[[e] for e in result["emails"]]])
+        save_list_to_csv("static/numbers.csv", [["Number"], *[[n] for n in result["numbers"]]])
+        save_links_to_csv("static/page_links.csv", result["links"])
+
+        # Add CSV URLs to JSON response
+        result["downloads"] = {
+            "emails": url_for('static', filename='emails.csv'),
+            "numbers": url_for('static', filename='numbers.csv'),
+            "links": url_for('static', filename='page_links.csv')
         }
 
-        return jsonify(download_links)
+        return jsonify(result)
+
     except Exception as e:
-        return jsonify({'error': 'An error occurred during processing.'}), 500
+        return jsonify({'error': str(e)}), 500
+
 
 async def scrape_url(url):
     base_url = urlparse(url).netloc
@@ -38,14 +46,10 @@ async def scrape_url(url):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-
-        try:
-            await page.goto(url, wait_until='networkidle')
-        except Exception as e:
-            raise Exception(f"Failed to load URL: {e}")
-
+        await page.goto(url, wait_until='networkidle')
         content = await page.content()
 
+        # ---- Extract links
         links = await page.evaluate('''() => {
             return Array.from(document.querySelectorAll('a')).map(a => ({
                 name: a.innerText,
@@ -55,31 +59,44 @@ async def scrape_url(url):
 
         await browser.close()
 
-        # Regex for emails and phone numbers
-        email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
-        phone_pattern = r'\+?\d[\d\-\(\) ]{7,}\d'
+        # ---- Regex patterns
+        emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', content)
+        numbers = re.findall(r'\+?\d[\d\-\(\) ]{7,}\d', content)
 
-        emails = re.findall(email_pattern, content)
-        numbers = re.findall(phone_pattern, content)
-
-        # Save the scraped data in the 'static' folder
-        save_to_file('static/emails.csv', emails)
-        save_to_file('static/numbers.csv', numbers)
-        save_links_to_csv('static/page_links.csv', links, base_url)
-
-def save_to_file(filename, data):
-    with open(filename, 'w', encoding='utf-8') as file:
-        for item in data:
-            file.write(f"{item}\n")
-
-def save_links_to_csv(filename, links, base_url):
-    with open(filename, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(["Link Name", "URL", "Internal/External"])
+        # ---- Add link type
+        processed_links = []
         for link in links:
             link_url = urlparse(link['url']).netloc
             link_type = "Internal" if link_url == base_url or link_url == '' else "External"
-            writer.writerow([link['name'], link['url'], link_type])
+            processed_links.append({
+                "name": link['name'],
+                "url": link['url'],
+                "type": link_type
+            })
+
+        return {
+            "emails": list(set(emails)),
+            "numbers": list(set(numbers)),
+            "links": processed_links
+        }
+
+
+def save_list_to_csv(filename, rows):
+    with open(filename, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(rows)
+
+
+def save_links_to_csv(filename, links):
+    with open(filename, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Link Name", "URL", "Type"])
+        for link in links:
+            writer.writerow([link["name"], link["url"], link["type"]])
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Change from app.run(debug=True) to:
+    app.run(host="0.0.0.0", port=9090, debug=True)
+
+

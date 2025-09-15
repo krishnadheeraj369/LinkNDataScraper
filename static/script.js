@@ -1,90 +1,76 @@
-document.getElementById('scrape-form').onsubmit = function(event) {
-    event.preventDefault(); // Prevent the default form submission
+document.getElementById("scrape-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
 
-    var url = document.querySelector('.url-input').value;
+    const url = document.querySelector(".url-input").value;
 
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/scrape', true);
-    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-    
-    // Handle the response from the server
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4) {
-            if (xhr.status == 200) {
-                var response = JSON.parse(xhr.responseText);
-                showScrapedResults(response); // Show the download links
-                alert('The website was successfully scraped!');
-            } else {
-                try {
-                    var errorResponse = JSON.parse(xhr.responseText);
-                    alert(errorResponse.error); // Shows the error message from the server
-                } catch(e) {
-                    alert('An unexpected error occurred.');
-                }
-            }
-        }
-    };
+    const response = await fetch("/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+    });
 
-    // Send the URL as a JSON payload
-    xhr.send(JSON.stringify({ url: url }));
-};
+    const data = await response.json();
+    document.getElementById("scraped-results").style.display = "block";
 
-// Display the download buttons and set download links
-function showScrapedResults(downloadLinks) {
-    document.getElementById('scraped-results').style.display = 'block';
-
-    // Update download links for emails, numbers, and links
-    document.getElementById('download-emails').href = downloadLinks.emails;
-    document.getElementById('download-numbers').href = downloadLinks.numbers;
-    document.getElementById('download-links').href = downloadLinks.links;
-
-    // Example table rendering
-    fetchAndDisplayTable('emails.csv', 'emails-content');
-    fetchAndDisplayTable('numbers.csv', 'numbers-content');
-    fetchAndDisplayTable('page_links.csv', 'links-content');
-}
-
-// Function to fetch and display scraped data in table format
-function fetchAndDisplayTable(filename, elementId) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/static/' + filename, true);
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            var rows = xhr.responseText.split('\\n').map(row => row.split(','));  // Split into rows and columns
-            var table = '<table><tr><th>Link Name</th><th>URL</th><th>Internal/External</th></tr>'; // Define headers
-            rows.forEach(function (row) {
-                if (row.length > 1) { // Check to avoid empty rows
-                    table += '<tr>';
-                    row.forEach(function (cell) {
-                        table += `<td>${cell}</td>`;
-                    });
-                    table += '</tr>';
-                }
-            });
-            table += '</table>';
-            document.getElementById(elementId).innerHTML = table;
-        } else if (xhr.readyState === 4 && xhr.status !== 200) {
-            document.getElementById(elementId).textContent = 'Error loading data.';
-        }
-    };
-    xhr.send();
-}
-
-// Toggle content visibility
-function toggleContent(elementId) {
-    var contentElement = document.getElementById(elementId);
-    if (contentElement.style.display === 'none' || contentElement.style.display === '') {
-        contentElement.style.display = 'block';
+    // ---- Emails ----
+    if (data.emails && data.emails.length > 0) {
+        let html = "<table><thead><tr><th>Email</th></tr></thead><tbody>";
+        data.emails.forEach(email => {
+            html += `<tr><td>${email}</td></tr>`;
+        });
+        html += "</tbody></table>";
+        document.getElementById("emails-content").innerHTML = html;
     } else {
-        contentElement.style.display = 'none';
+        document.getElementById("emails-content").innerHTML = "<p>No emails found</p>";
     }
+
+    // ---- Numbers ----
+    if (data.numbers && data.numbers.length > 0) {
+        let html = "<table><thead><tr><th>Number</th></tr></thead><tbody>";
+        data.numbers.forEach(num => {
+            html += `<tr><td>${num}</td></tr>`;
+        });
+        html += "</tbody></table>";
+        document.getElementById("numbers-content").innerHTML = html;
+    } else {
+        document.getElementById("numbers-content").innerHTML = "<p>No numbers found</p>";
+    }
+
+    // ---- Links ----
+    if (data.links && data.links.length > 0) {
+        let html = "<table><thead><tr><th>Link Name</th><th>URL</th><th>Type</th></tr></thead><tbody>";
+        data.links.forEach(link => {
+            html += `<tr>
+                        <td>${link.name || "-"}</td>
+                        <td><a href="${link.url}" target="_blank">${link.url}</a></td>
+                        <td>${link.type}</td>
+                     </tr>`;
+        });
+        html += "</tbody></table>";
+        document.getElementById("links-content").innerHTML = html;
+    } else {
+        document.getElementById("links-content").innerHTML = "<p>No links found</p>";
+    }
+
+    // ---- Hook up download buttons ----
+    if (data.downloads) {
+        document.getElementById("download-emails").href = data.downloads.emails;
+        document.getElementById("download-numbers").href = data.downloads.numbers;
+        document.getElementById("download-links").href = data.downloads.links;
+    }
+});
+
+// ✅ Toggle section visibility
+function toggleContent(id) {
+    const el = document.getElementById(id);
+    el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
 }
 
-// Reset the page to its initial state
+// ✅ Reset page
 function resetPage() {
-    document.getElementById('scrape-form').reset();
-    document.getElementById('scraped-results').style.display = 'none';
-    document.getElementById('emails-content').style.display = 'none'; // Hide content
-    document.getElementById('numbers-content').style.display = 'none'; // Hide content
-    document.getElementById('links-content').style.display = 'none'; // Hide content
+    document.getElementById("scraped-results").style.display = "none";
+    document.getElementById("emails-content").innerHTML = "";
+    document.getElementById("numbers-content").innerHTML = "";
+    document.getElementById("links-content").innerHTML = "";
+    document.getElementById("scrape-form").reset();
 }

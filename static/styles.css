@@ -166,3 +166,83 @@ th {
     background-color: #f0f4f8;
     color: #333;
 }
+
+/* ✅ Scrollable content for scraped data */
+.content-display {
+    max-height: 300px;      /* Adjust as needed */
+    overflow-y: auto;       /* Vertical scroll */
+    overflow-x: hidden;     /* Disable horizontal scroll */
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-top: 8px;
+    padding: 10px;
+    background: #fafafa;
+}
+
+/* Optional: make tables inside scrollable area cleaner */
+.content-display table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;   /* Prevents stretching */
+    word-wrap: break-word;
+}
+
+.content-display th, .content-display td {
+    padding: 8px;
+    border: 1px solid #ccc;
+}
+
+.content-display thead {
+    background: #f1f1f1;
+    position: sticky;
+    top: 0;                /* ✅ Sticky headers */
+    z-index: 1;
+}
+/* ===== Scraped Data Tables ===== */
+.content-display table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* Table header */
+.content-display thead {
+    background-color: #007BFF;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+/* Table cells */
+.content-display th,
+.content-display td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+    word-wrap: break-word;
+}
+
+/* Alternate row coloring */
+.content-display tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+.content-display tbody tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+/* Hover effect */
+.content-display tbody tr:hover {
+    background-color: #e8f0fe;
+    transition: background 0.2s ease-in-out;
+}
+
+/* Links inside tables */
+.content-display a {
+    color: #007BFF;
+    text-decoration: none;
+}
+.content-display a:hover {
+    text-decoration: underline;
+}
