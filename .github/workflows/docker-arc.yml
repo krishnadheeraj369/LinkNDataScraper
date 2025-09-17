@@ -1,27 +1,35 @@
-name: Build and Push to ACR
+name: Build and Push Docker Image to ACR
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Log in to Azure Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ secrets.ACR_LOGIN_SERVER }}
-        username: ${{ secrets.ACR_USERNAME }}
-        password: ${{ secrets.ACR_PASSWORD }}
+      # Step 2: Login to Azure using Service Principal
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Build and Push Docker image
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        push: true
-        tags: ${{ secrets.ACR_LOGIN_SERVER }}/scrapper:latest
+      # Step 3: Log in to Azure Container Registry
+      - name: ACR Login
+        run: |
+          az acr login --name nextrowdevacr
+
+      # Step 4: Build Docker image
+      - name: Build Docker Image
+        run: |
+          docker build -t nextrowdevacr.azurecr.io/scrapper:latest .
+
+      # Step 5: Push to ACR
+      - name: Push Docker Image
+        run: |
+          docker push nextrowdevacr.azurecr.io/scrapper:latest
