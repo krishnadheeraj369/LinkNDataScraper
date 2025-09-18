@@ -12,15 +12,6 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-    - name: Download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: image-info
-
-    - name: Read image info
-      id: image
-      run: echo "IMAGE=$(cat image-info.txt)" >> $GITHUB_ENV
-
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -34,13 +25,16 @@ jobs:
 
     - name: Deploy to AKS
       run: |
+        IMAGE="nextrowdevcr.azurecr.io/dev/webscrapper:v${{ github.run_number }}"
+        echo "Deploying image $IMAGE"
+
         # Create or update deployment
         kubectl create deployment webscrapperapp \
           --image=$IMAGE --replicas=1 --dry-run=client -o yaml | kubectl apply -f -
-        
+
         # Create or update LoadBalancer service
         kubectl expose deployment webscrapperapp \
           --type=LoadBalancer --port=80 --target-port=9090 --dry-run=client -o yaml | kubectl apply -f -
-        
-        # Wait for rollout to complete
+
+        # Wait for rollout
         kubectl rollout status deployment/webscrapperapp
