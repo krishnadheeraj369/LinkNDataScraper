@@ -3,7 +3,7 @@ name: CI/CD - Build, Push to ACR and Deploy to AKS
 on:
   push:
     branches:
-      - main   # adjust if your default branch is different
+      - main   # change if your default branch is different
 
 jobs:
   build-and-deploy:
@@ -41,6 +41,13 @@ jobs:
 
     - name: Install kubelogin
       run: az aks install-cli
+
+    - name: Authenticate with Service Principal (kubelogin)
+      run: |
+        kubelogin convert-kubeconfig -l spn \
+          --client-id ${{ secrets.AZURE_CLIENT_ID }} \
+          --client-secret ${{ secrets.AZURE_CLIENT_SECRET }} \
+          --tenant-id ${{ secrets.AZURE_TENANT_ID }}
 
     - name: Deploy to AKS (dev namespace)
       run: |
