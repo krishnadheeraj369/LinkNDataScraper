@@ -31,11 +31,11 @@ jobs:
         docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:$IMAGE_TAG .
         docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:$IMAGE_TAG
 
+    - name: Save image info to file
+      run: echo "${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:${{ github.sha }}" > image-info.txt
+
     - name: Upload metadata for CD
       uses: actions/upload-artifact@v3
       with:
         name: image-info
         path: image-info.txt
-      env:
-        IMAGE_TAG: ${{ github.sha }}
-      run: echo "${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:${{ github.sha }}" > image-info.txt
