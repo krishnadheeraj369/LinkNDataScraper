@@ -1,3 +1,11 @@
+name: CD - Deploy to AKS
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Push to ACR"]
+    types:
+      - completed
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,15 +27,41 @@ jobs:
       run: |
         az aks install-cli
 
-    - name: Deploy to AKS
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: image-info
+        path: .
+
+    - name: Read image info
+      id: image
       run: |
-        IMAGE="nextrowdevcr.azurecr.io/dev/webscrapper:v${{ github.run_number }}"
-        echo "Deploying image $IMAGE"
+        IMAGE=$(cat image-info.txt)
+        echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+    - name: Deploy to AKS (dev namespace)
+      run: |
+        kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
 
         kubectl create deployment webscrapperapp \
-          --image=$IMAGE --replicas=1 --dry-run=client -o yaml | kubectl apply -f -
+          --image=$IMAGE --replicas=1 -n dev --dry-run=client -o yaml | kubectl apply -f -
 
         kubectl expose deployment webscrapperapp \
-          --type=LoadBalancer --port=80 --target-port=9090 --dry-run=client -o yaml | kubectl apply -f -
+          --type=LoadBalancer --port=80 --target-port=9090 -n dev --dry-run=client -o yaml | kubectl apply -f -
 
-        kubectl rollout status deployment/webscrapperapp
+        kubectl rollout status deployment/webscrapperapp -n dev
+
+    - name: Get Service External IP
+      run: |
+        echo "Waiting for External IP..."
+        for i in {1..10}; do
+          EXTERNAL_IP=$(kubectl get svc webscrapperapp -n dev --output=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          if [ -n "$EXTERNAL_IP" ]; then
+            echo "✅ External IP assigned: http://$EXTERNAL_IP"
+            exit 0
+          fi
+          echo "Still waiting... retry $i/10"
+          sleep 15
+        done
+        echo "⚠️ External IP not ready yet. Run 'kubectl get svc webscrapperapp -n dev' manually."
+        exit 1
