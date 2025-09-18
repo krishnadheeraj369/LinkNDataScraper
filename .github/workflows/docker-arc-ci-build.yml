@@ -35,7 +35,7 @@ jobs:
       run: echo "${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:${{ github.sha }}" > image-info.txt
 
     - name: Upload metadata for CD
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: image-info
         path: image-info.txt
