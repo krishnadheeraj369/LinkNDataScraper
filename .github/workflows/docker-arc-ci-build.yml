@@ -1,0 +1,41 @@
+name: CI - Build and Push to ACR
+
+on:
+  push:
+    branches:
+      - main   # change if your default branch is different
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Docker login to ACR
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    - name: Build and Push image
+      run: |
+        IMAGE_TAG=${{ github.sha }}
+        docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:$IMAGE_TAG .
+        docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:$IMAGE_TAG
+
+    - name: Upload metadata for CD
+      uses: actions/upload-artifact@v3
+      with:
+        name: image-info
+        path: image-info.txt
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+      run: echo "${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:${{ github.sha }}" > image-info.txt

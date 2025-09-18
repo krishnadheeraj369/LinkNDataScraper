@@ -1,0 +1,43 @@
+name: CD - Deploy to AKS
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Push to ACR"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: image-info
+
+    - name: Read image info
+      id: image
+      run: echo "IMAGE=$(cat image-info.txt)" >> $GITHUB_ENV
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Set AKS context
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+        cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+
+    - name: Deploy to AKS
+      run: |
+        kubectl create deployment webscrapperapp \
+          --image=$IMAGE --replicas=1 --dry-run=client -o yaml | kubectl apply -f -
+        
+        kubectl expose deployment webscrapperapp \
+          --type=LoadBalancer --port=80 --target-port=9090 --dry-run=client -o yaml | kubectl apply -f -
+        
+        kubectl rollout status deployment/webscrapperapp
