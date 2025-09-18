@@ -1,22 +1,38 @@
-name: CD - Deploy to AKS
+name: CI/CD - Build, Push to ACR and Deploy to AKS
 
 on:
-  workflow_run:
-    workflows: ["CI - Build and Push to ACR"]
-    types:
-      - completed
+  push:
+    branches:
+      - main   # adjust if your default branch is different
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+    # --- CI: Build & Push ---
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - name: Azure Login
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Login to ACR
+      run: az acr login --name nextrowdevcr
+
+    - name: Build and Push image
+      run: |
+        IMAGE_TAG=v${{ github.run_number }}
+        IMAGE_NAME=nextrowdevcr.azurecr.io/dev/webscrapper:$IMAGE_TAG
+
+        echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+
+        docker build -t $IMAGE_NAME .
+        docker push $IMAGE_NAME
+
+    # --- CD: Deploy to AKS ---
     - name: Set AKS context
       uses: azure/aks-set-context@v3
       with:
@@ -24,27 +40,14 @@ jobs:
         cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
 
     - name: Install kubelogin
-      run: |
-        az aks install-cli
-
-    - name: Download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: image-info
-        path: .
-
-    - name: Read image info
-      id: image
-      run: |
-        IMAGE=$(cat image-info.txt)
-        echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+      run: az aks install-cli
 
     - name: Deploy to AKS (dev namespace)
       run: |
         kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
 
         kubectl create deployment webscrapperapp \
-          --image=$IMAGE --replicas=1 -n dev --dry-run=client -o yaml | kubectl apply -f -
+          --image=$IMAGE_NAME --replicas=1 -n dev --dry-run=client -o yaml | kubectl apply -f -
 
         kubectl expose deployment webscrapperapp \
           --type=LoadBalancer --port=80 --target-port=9090 -n dev --dry-run=client -o yaml | kubectl apply -f -
