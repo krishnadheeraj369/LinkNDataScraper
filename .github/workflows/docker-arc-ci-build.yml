@@ -18,21 +18,17 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Docker login to ACR
-      uses: azure/docker-login@v1
-      with:
-        login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_PASSWORD }}
+    - name: Login to ACR
+      run: az acr login --name nextrowdevcr
 
     - name: Build and Push image
       run: |
         IMAGE_TAG=${{ github.sha }}
-        docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:$IMAGE_TAG .
-        docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:$IMAGE_TAG
+        docker build -t nextrowdevcr.azurecr.io/dev/webscrapper:$IMAGE_TAG .
+        docker push nextrowdevcr.azurecr.io/dev/webscrapper:$IMAGE_TAG
 
     - name: Save image info to file
-      run: echo "${{ secrets.REGISTRY_LOGIN_SERVER }}/dev/webscrapper:${{ github.sha }}" > image-info.txt
+      run: echo "nextrowdevcr.azurecr.io/dev/webscrapper:${{ github.sha }}" > image-info.txt
 
     - name: Upload metadata for CD
       uses: actions/upload-artifact@v4
