@@ -1,11 +1,3 @@
-name: CD - Deploy to AKS
-
-on:
-  workflow_run:
-    workflows: ["CI - Build and Push to ACR"]
-    types:
-      - completed
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -23,18 +15,19 @@ jobs:
         resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
         cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
 
+    - name: Install kubelogin
+      run: |
+        az aks install-cli
+
     - name: Deploy to AKS
       run: |
         IMAGE="nextrowdevcr.azurecr.io/dev/webscrapper:v${{ github.run_number }}"
         echo "Deploying image $IMAGE"
 
-        # Create or update deployment
         kubectl create deployment webscrapperapp \
           --image=$IMAGE --replicas=1 --dry-run=client -o yaml | kubectl apply -f -
 
-        # Create or update LoadBalancer service
         kubectl expose deployment webscrapperapp \
           --type=LoadBalancer --port=80 --target-port=9090 --dry-run=client -o yaml | kubectl apply -f -
 
-        # Wait for rollout
         kubectl rollout status deployment/webscrapperapp
