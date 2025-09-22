@@ -26,11 +26,13 @@ jobs:
       run: |
         IMAGE_TAG=v${{ github.run_number }}
         IMAGE_NAME=nextrowdevcr.azurecr.io/dev/webscrapper:$IMAGE_TAG
+        LATEST_NAME=nextrowdevcr.azurecr.io/dev/webscrapper:latest
 
         echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
-        docker build -t $IMAGE_NAME .
+        docker build -t $IMAGE_NAME -t $LATEST_NAME .
         docker push $IMAGE_NAME
+        docker push $LATEST_NAME
 
     # --- CD: Deploy to AKS ---
     - name: Set AKS context
@@ -64,14 +66,19 @@ jobs:
     - name: Get Service External IP
       run: |
         echo "Waiting for External IP..."
-        for i in {1..10}; do
+        for i in {1..20}; do
           EXTERNAL_IP=$(kubectl get svc webscrapperapp -n dev --output=jsonpath='{.status.loadBalancer.ingress[0].ip}')
           if [ -n "$EXTERNAL_IP" ]; then
             echo "✅ External IP assigned: http://$EXTERNAL_IP"
+            echo "EXTERNAL_IP=$EXTERNAL_IP" >> $GITHUB_ENV
             exit 0
           fi
-          echo "Still waiting... retry $i/10"
+          echo "Still waiting... retry $i/20"
           sleep 15
         done
         echo "⚠️ External IP not ready yet. Run 'kubectl get svc webscrapperapp -n dev' manually."
         exit 1
+
+    - name: Print App URL
+      run: |
+        echo "🚀 App running at: http://${{ env.EXTERNAL_IP }}"
