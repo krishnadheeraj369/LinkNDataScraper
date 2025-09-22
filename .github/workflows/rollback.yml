@@ -12,7 +12,52 @@ jobs:
   rollback:
     runs-on: ubuntu-latest
 
+    steps:name: Rollback - Deploy Specific Version to AKS
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image tag to roll back to (e.g., v2, v3, v4)"
+        required: true
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+
     steps:
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Set AKS context
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+        cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+
+    - name: Install kubelogin
+      run: az aks install-cli
+
+    - name: Authenticate with Service Principal (kubelogin)
+      run: |
+        kubelogin convert-kubeconfig -l spn \
+          --client-id ${{ secrets.AZURE_CLIENT_ID }} \
+          --client-secret ${{ secrets.AZURE_CLIENT_SECRET }} \
+          --tenant-id ${{ secrets.AZURE_TENANT_ID }}
+
+    - name: Rollback to Specific Version
+      run: |
+        IMAGE=nextrowdevcr.azurecr.io/dev/webscrapper:${{ github.event.inputs.version }}
+        echo "Rolling back webscrapperapp in dev namespace to $IMAGE..."
+        
+        kubectl set image deployment/webscrapperapp \
+          webscrapperapp=$IMAGE \
+          -n dev
+        
+        kubectl rollout status deployment/webscrapperapp -n dev
+
     - name: Azure Login
       uses: azure/login@v1
       with:
